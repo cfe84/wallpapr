@@ -1,0 +1,44 @@
+{
+  "name": "wallpapr",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "mocha --require ts-node/register ./test/**/*.ts",
+    "build": "tsc",
+    "rebuild": "npm run clean && npm run build",
+    "prepublish": "npm run rebuild",
+    "clean": "rm -rf dist/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cfe84/wallpapr.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cfe84/wallpapr/issues"
+  },
+  "homepage": "https://github.com/cfe84/wallpapr#readme",
+  "dependencies": {
+    "flickr-sdk": "^3.9.0",
+    "homedir": "^0.6.0",
+    "jimp": "^0.16.1",
+    "node-localstorage": "^2.1.6",
+    "wallpaper": "^4.4.1"
+  },
+  "devDependencies": {
+    "@types/mocha": "^8.0.3",
+    "@types/node": "^14.14.6",
+    "@types/should": "^13.0.0",
+    "mocha": "^8.2.1",
+    "should": "^13.2.3",
+    "testdouble": "^3.16.1",
+    "ts-loader": "^8.0.9",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.5"
+  },
+  "bin": {
+    "wallpapr": "./bin/wallpapr"
+  }
+}
