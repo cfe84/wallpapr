@@ -90,7 +90,7 @@ export class FlickrPhotoSource {
     const flickr = new Flickr(auth);
     const res = await flickr.photos.getSizes({ photo_id: photoId });
     const sizes = res.body.sizes.size.sort((a, b) => a.width - b.width)
-    const matchingSizes = sizes.filter(size => size.width >= minWidth)
+    const matchingSizes = sizes.filter(size => size.width >= minWidth || size.height >= minWidth)
     if (matchingSizes.length > 0) {
       return matchingSizes[0].source
     } else {
@@ -100,11 +100,11 @@ export class FlickrPhotoSource {
 
 }
 
-interface Photoset {
+export interface Photoset {
   id: string
   title: string
 }
 
-interface Photo {
+export interface Photo {
   id: string
 }
