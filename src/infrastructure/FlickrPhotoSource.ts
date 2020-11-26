@@ -1,6 +1,5 @@
 import * as Flickr from "flickr-sdk"
 import { AlbumId, PhotoId } from "flickr-sdk";
-//const Flickr = require("flickr-sdk") as FlickrType
 const parse = require('url').parse;
 import * as http from "http"
 import { Configuration, Token } from "./Configuration";
