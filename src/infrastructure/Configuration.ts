@@ -8,15 +8,19 @@ export interface Token {
 export class Configuration {
   private localStorage: LocalStorage
   constructor() {
-    const storagePath = ".flickrcli";
-    this.localStorage = new LocalStorage(storagePath);
+    const storagePath = ".flickrcli"
+    this.localStorage = new LocalStorage(storagePath)
   }
 
-  setToken(token: Token) {
-    this.localStorage.setItem("token", JSON.stringify(token));
+  setFlickrToken(token: Token) {
+    this.localStorage.setItem("token", JSON.stringify(token))
   }
 
-  getToken() {
-    return JSON.parse(this.localStorage.getItem("token"));
+  getFlickrToken(): Token | null {
+    const token = this.localStorage.getItem("token")
+    if (token)
+      return JSON.parse(token) as Token
+    else
+      return null
   }
 }

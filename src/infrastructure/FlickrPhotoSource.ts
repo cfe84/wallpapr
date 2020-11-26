@@ -1,7 +1,9 @@
 import * as Flickr from "flickr-sdk"
+import { AlbumId, PhotoId } from "flickr-sdk";
+//const Flickr = require("flickr-sdk") as FlickrType
 const parse = require('url').parse;
 import * as http from "http"
-import { Configuration } from "./Configuration";
+import { Configuration, Token } from "./Configuration";
 
 interface Dependencies {
   configuration: Configuration
@@ -10,22 +12,20 @@ interface Dependencies {
 const key = "9d4245967dab4342323f56e5a3729d4e";
 const secret = "285ef7f67de72667";
 
-class FlickrAdapter {
+export class FlickrPhotoSource {
+  private token: Token | undefined | null
   constructor(private deps: Dependencies) {
   }
 
-  getFlickrAuth() {
-    const token = this.deps.configuration.getToken();
-    const auth = Flickr.OAuth.createPlugin(
-      key,
-      secret,
-      token.oauth_token,
-      token.oauth_token_secret
-    );
-    return auth;
+  public async authenticateAsync(): Promise<void> {
+    this.token = this.deps.configuration.getFlickrToken();
+    if (this.token === null) {
+      this.token = await this.loginAsync()
+      this.deps.configuration.setFlickrToken(this.token)
+    }
   }
 
-  async login() {
+  private async loginAsync(): Promise<Token> {
     const listenToAnswer = () => {
       return new Promise((resolve: (verifier: string) => void) => {
         const server = http.createServer((req, res) => {
@@ -44,38 +44,67 @@ class FlickrAdapter {
     console.log(`Go to this URL and authorize the application: ${oauth.authorizeUrl(oauth_token, "read")}`)
     const verifier = await listenToAnswer();
     const verifyRes = await oauth.verify(oauth_token, verifier, oauth_token_secret);
-    const token = verifyRes.body;
-    return token;
+    const flickrToken = verifyRes.body;
+    const token: Token = {
+      oauthToken: flickrToken.oauth_token,
+      oauthTokenSecret: flickrToken.oauth_token_secret
+    }
+    return token
   }
 
-  // async listAlbums() {
-  //   const generateFieldFlattener = (field) => (entry) => {
-  //     entry[field] = entry[field]["_content"];
-  //     return entry;
-  //   };
-  //   const auth = this.getFlickrAuth();
-  //   const flickr = new Flickr(auth);
-  //   const res = await flickr.photosets.getList();
-  //   const list = res.body.photosets.photoset;
-  //   const flattenedList = list
-  //     .map(generateFieldFlattener("title"))
-  //     .map(generateFieldFlattener("description"));
-  //   return flattenedList;
-  // }
+  private getFlickrAuth() {
+    if (!this.token) {
+      throw Error("Not authenticated")
+    }
+    const auth = Flickr.OAuth.createPlugin(
+      key,
+      secret,
+      this.token.oauthToken,
+      this.token.oauthTokenSecret
+    );
+    return auth;
+  }
 
-  // async getAlbumContent(albumId) {
-  //   const generateFieldFlattener = (field) => (entry) => {
-  //     entry[field] = entry[field]["_content"];
-  //     return entry;
-  //   };
-  //   const auth = this.getFlickrAuth();
-  //   const flickr = new Flickr(auth);
-  //   const res = await flickr.photosets.getPhotos({ photoset_id: albumId, user_id: auth.user_id });
-  //   const list = res.body.photoset.photo;
-  //   const flattenedList = list;
-  //   return flattenedList;
-  // }
+  async listAlbums(): Promise<Photoset[]> {
+    const auth = this.getFlickrAuth();
+    const flickr = new Flickr(auth);
+    const res = await flickr.photosets.getList();
+    return res.body.photosets.photoset.map(photoset => ({
+      id: photoset.id,
+      title: photoset.title._content
+    }))
+  }
+
+  async getPhotosAsync(albumId: AlbumId): Promise<Photo[]> {
+    const auth = this.getFlickrAuth();
+    const flickr = new Flickr(auth);
+    const res = await flickr.photosets.getPhotos({ photoset_id: albumId, user_id: auth.user_id });
+    const list = res.body.photoset.photo;
+    return list.map(photo => ({
+      id: photo.id
+    }))
+  }
+
+  async getPhotoUrl(photoId: PhotoId, minWidth: number) {
+    const auth = this.getFlickrAuth();
+    const flickr = new Flickr(auth);
+    const res = await flickr.photos.getSizes({ photo_id: photoId });
+    const sizes = res.body.sizes.size.sort((a, b) => a.width - b.width)
+    const matchingSizes = sizes.filter(size => size.width >= minWidth)
+    if (matchingSizes.length > 0) {
+      return matchingSizes[0].source
+    } else {
+      return sizes[sizes.length - 1].source
+    }
+  }
 
 }
 
-module.exports = FlickrAdapter;
+interface Photoset {
+  id: string
+  title: string
+}
+
+interface Photo {
+  id: string
+}
