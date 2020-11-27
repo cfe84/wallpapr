@@ -2,6 +2,7 @@ import * as Flickr from "flickr-sdk"
 import { AlbumId, PhotoId } from "flickr-sdk";
 const parse = require('url').parse;
 import * as http from "http"
+import fetch from "node-fetch";
 import { Configuration, Token } from "./Configuration";
 
 interface Dependencies {
@@ -64,7 +65,7 @@ export class FlickrPhotoSource {
     return auth;
   }
 
-  async listAlbums(): Promise<Photoset[]> {
+  async listAlbumsAsync(): Promise<Photoset[]> {
     const auth = this.getFlickrAuth();
     const flickr = new Flickr(auth);
     const res = await flickr.photosets.getList();
@@ -84,7 +85,7 @@ export class FlickrPhotoSource {
     }))
   }
 
-  async getPhotoUrl(photoId: PhotoId, minWidth: number) {
+  async getPhoto(photoId: PhotoId, minWidth: number): Promise<Buffer> {
     const auth = this.getFlickrAuth();
     const flickr = new Flickr(auth);
     const res = await flickr.photos.getSizes({ photo_id: photoId });
@@ -93,11 +94,12 @@ export class FlickrPhotoSource {
       .sort((a, b) => a.width - b.width)
     const matchingSizes = sizes
       .filter(size => size.width >= minWidth || size.height >= minWidth)
-    if (matchingSizes.length > 0) {
-      return matchingSizes[0].source
-    } else {
-      return sizes[sizes.length - 1].source
-    }
+    const url = (matchingSizes.length > 0)
+      ? matchingSizes[0].source
+      : sizes[sizes.length - 1].source
+    const photo = await fetch(url)
+    const content = await photo.buffer()
+    return content
   }
 
 }
