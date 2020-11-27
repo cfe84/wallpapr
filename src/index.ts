@@ -5,12 +5,14 @@ import wallpaper = require("wallpaper")
 import * as Jimp from "jimp"
 import * as fs from "fs"
 
-const backgroundFiles = ["background-1.jpg", "background-2.jpg"]
+const backgroundFiles = ["background-1.png", "background-2.png"]
+let baseImage: Jimp
 let backgroundIndex = 0
 const size = {
   w: 2256,
   h: 1504
 }
+const refreshRateMs = 5000
 
 type getRandomPhotoUrlAsyncType = () => Promise<string>
 
@@ -18,12 +20,13 @@ const grabPhotoAtRandomAndDisplayAsync = async (getRandomPhotoUrlAsync: getRando
   const url = await getRandomPhotoUrlAsync()
   const res = await fetch(url)
   const content = await res.buffer()
-  let baseImage: Jimp
-  const originalBackgroundFile = await wallpaper.get()
-  if (!fs.existsSync(originalBackgroundFile)) {
-    baseImage = await Jimp.create(size.w, size.h)
-  } else {
-    baseImage = await Jimp.read(originalBackgroundFile)
+  if (!baseImage) {
+    const originalBackgroundFile = await wallpaper.get()
+    if (!fs.existsSync(originalBackgroundFile)) {
+      baseImage = await (await Jimp.create(size.w, size.h)).quality(99)
+    } else {
+      baseImage = await (await Jimp.read(originalBackgroundFile)).quality(99)
+    }
   }
   const newPicture = await Jimp.read(content)
   const rotatedImage = await newPicture.rotate(Math.random() * 30 - 15)
@@ -31,17 +34,20 @@ const grabPhotoAtRandomAndDisplayAsync = async (getRandomPhotoUrlAsync: getRando
     t: Math.random() * (baseImage.getHeight()) - newPicture.getHeight() / 2,
     l: Math.random() * (baseImage.getWidth()) - newPicture.getWidth() / 2,
   }
-  const newBackground = await baseImage.blit(rotatedImage, pos.l, pos.t)
+  baseImage = await baseImage.composite(rotatedImage, pos.l, pos.t)
   const backgroundFile = backgroundFiles[backgroundIndex++ % backgroundFiles.length]
-  await newBackground.writeAsync(backgroundFile)
+  await baseImage.writeAsync(backgroundFile)
   wallpaper.set(backgroundFile)
 }
 
 const loop = (getRandomPhotoUrlAsync: getRandomPhotoUrlAsyncType) => {
-  grabPhotoAtRandomAndDisplayAsync(getRandomPhotoUrlAsync).then(() => {
+  const next = () => {
     console.log("New picture!")
-    setTimeout(() => loop(getRandomPhotoUrlAsync), 2000)
-  })
+    setTimeout(() => loop(getRandomPhotoUrlAsync), refreshRateMs)
+  }
+  grabPhotoAtRandomAndDisplayAsync(getRandomPhotoUrlAsync)
+    .then(next)
+    .catch(next)
 }
 
 const runAsync = async () => {
@@ -53,7 +59,7 @@ const runAsync = async () => {
     .slice(0, 20)
 
   const getRandomPhotoUrlAsync = async () => {
-    const album = albums[Math.ceil(Math.random() * albums.length)]
+    const album = albums[Math.floor(Math.random() * albums.length)]
     const photos = await source.getPhotosAsync(album.id)
     const randomPicture = photos[Math.floor(Math.random() * photos.length)]
     const url = await source.getPhotoUrl(randomPicture.id, 800)

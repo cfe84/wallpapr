@@ -88,8 +88,11 @@ export class FlickrPhotoSource {
     const auth = this.getFlickrAuth();
     const flickr = new Flickr(auth);
     const res = await flickr.photos.getSizes({ photo_id: photoId });
-    const sizes = res.body.sizes.size.sort((a, b) => a.width - b.width)
-    const matchingSizes = sizes.filter(size => size.width >= minWidth || size.height >= minWidth)
+    const sizes = res.body.sizes.size
+      .filter(p => p.media === "photo")
+      .sort((a, b) => a.width - b.width)
+    const matchingSizes = sizes
+      .filter(size => size.width >= minWidth || size.height >= minWidth)
     if (matchingSizes.length > 0) {
       return matchingSizes[0].source
     } else {
