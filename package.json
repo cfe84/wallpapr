@@ -1,7 +1,7 @@
 {
   "name": "wallpapr",
   "version": "1.0.0",
-  "description": "",
+  "description": "Creates a wallpapr montage on your desktop that gets updated every few seconds with an additional photo",
   "main": "dist/index.js",
   "scripts": {
     "test": "mocha --require ts-node/register ./test/**/*.ts",
@@ -9,13 +9,13 @@
     "rebuild": "npm run clean && npm run build",
     "prepublish": "npm run rebuild",
     "clean": "rm -rf dist/",
-    "start": "npm run build && node dist/index.js"
+    "start": "npm run build && node dist/index.js flickr"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/cfe84/wallpapr.git"
   },
-  "author": "",
+  "author": "Charles Feval",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/cfe84/wallpapr/issues"
@@ -27,7 +27,8 @@
     "jimp": "^0.16.1",
     "node-fetch": "^2.6.1",
     "node-localstorage": "^2.1.6",
-    "wallpaper": "^4.4.1"
+    "wallpaper": "^4.4.1",
+    "yaclip": "^1.2.1"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.3",

@@ -14,15 +14,17 @@ const secret = "285ef7f67de72667";
 
 export class FlickrPhotoSource {
   private token: Token | undefined | null
+  private authenticated = false
   constructor(private deps: Dependencies) {
   }
 
-  public async authenticateAsync(): Promise<void> {
+  private async authenticateAsync(): Promise<void> {
     this.token = this.deps.configuration.getFlickrToken();
     if (this.token === null) {
       this.token = await this.loginAsync()
       this.deps.configuration.setFlickrToken(this.token)
     }
+    this.authenticated = true
   }
 
   private async loginAsync(): Promise<Token> {
@@ -52,7 +54,10 @@ export class FlickrPhotoSource {
     return token
   }
 
-  private getFlickrAuth() {
+  private async getFlickrAuth(): Promise<any> {
+    if (!this.authenticated) {
+      await this.authenticateAsync()
+    }
     if (!this.token) {
       throw Error("Not authenticated")
     }
@@ -66,7 +71,7 @@ export class FlickrPhotoSource {
   }
 
   async listAlbumsAsync(): Promise<Photoset[]> {
-    const auth = this.getFlickrAuth();
+    const auth = await this.getFlickrAuth();
     const flickr = new Flickr(auth);
     const res = await flickr.photosets.getList();
     return res.body.photosets.photoset.map(photoset => ({
@@ -76,7 +81,7 @@ export class FlickrPhotoSource {
   }
 
   async getPhotosAsync(albumId: AlbumId): Promise<Photo[]> {
-    const auth = this.getFlickrAuth();
+    const auth = await this.getFlickrAuth();
     const flickr = new Flickr(auth);
     const res = await flickr.photosets.getPhotos({ photoset_id: albumId, user_id: auth.user_id, extras: "media,tags" });
     const list = res.body.photoset.photo;
@@ -89,7 +94,7 @@ export class FlickrPhotoSource {
   }
 
   async getPhoto(photoId: PhotoId, minWidth: number): Promise<Buffer> {
-    const auth = this.getFlickrAuth();
+    const auth = await this.getFlickrAuth();
     const flickr = new Flickr(auth);
     const res = await flickr.photos.getSizes({ photo_id: photoId });
     const sizes = res.body.sizes.size

@@ -2,10 +2,10 @@ import { IPhotoProvider } from "../domain/IPhotoProvider";
 import { FlickrPhotoSource, Photoset } from "./FlickrPhotoSource";
 
 export interface FlickrPhotoProviderOptions {
-  albumCount: number
+  albumCount?: number
 }
 
-export class FlickrAlbumPhotoProvider implements IPhotoProvider {
+export class FlickrPhotoProvider implements IPhotoProvider {
   private albums: Photoset[] = []
 
   constructor(private source: FlickrPhotoSource, private options?: FlickrPhotoProviderOptions) {
