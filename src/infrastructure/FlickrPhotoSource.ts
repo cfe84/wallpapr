@@ -78,11 +78,14 @@ export class FlickrPhotoSource {
   async getPhotosAsync(albumId: AlbumId): Promise<Photo[]> {
     const auth = this.getFlickrAuth();
     const flickr = new Flickr(auth);
-    const res = await flickr.photosets.getPhotos({ photoset_id: albumId, user_id: auth.user_id });
+    const res = await flickr.photosets.getPhotos({ photoset_id: albumId, user_id: auth.user_id, extras: "media,tags" });
     const list = res.body.photoset.photo;
-    return list.map(photo => ({
-      id: photo.id
-    }))
+    return list
+      .filter(photo => photo.media === "photo")
+      .filter(photo => photo.tags.indexOf("nowallpapr") < 0)
+      .map(photo => ({
+        id: photo.id
+      }))
   }
 
   async getPhoto(photoId: PhotoId, minWidth: number): Promise<Buffer> {
@@ -90,7 +93,6 @@ export class FlickrPhotoSource {
     const flickr = new Flickr(auth);
     const res = await flickr.photos.getSizes({ photo_id: photoId });
     const sizes = res.body.sizes.size
-      .filter(p => p.media === "photo")
       .sort((a, b) => a.width - b.width)
     const matchingSizes = sizes
       .filter(size => size.width >= minWidth || size.height >= minWidth)

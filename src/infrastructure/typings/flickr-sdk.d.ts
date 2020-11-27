@@ -28,6 +28,8 @@ declare module 'flickr-sdk' {
     server: string
     farm: number
     title: string
+    media: Flickr.MediaType
+    tags: string
   }
 
 
@@ -70,7 +72,8 @@ declare module 'flickr-sdk' {
 
   interface GetPhotosParameters {
     photoset_id: AlbumId,
-    user_id: UserId
+    user_id: UserId,
+    extras: string
   }
 
   interface PhotosetsProvider {
