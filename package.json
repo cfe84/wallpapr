@@ -1,6 +1,6 @@
 {
   "name": "wallpapr",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Creates a wallpapr montage on your desktop that gets updated every few seconds with an additional photo",
   "main": "dist/index.js",
   "scripts": {
